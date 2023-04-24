@@ -1,0 +1,53 @@
+###############################
+#
+#       UCB-JUDGE - v1.0
+#
+###############################
+
+version: "3.7"
+
+services:
+  # zerotier:
+  #   image: zerotier/zerotier-synology:latest
+  #   container_name: zerotier
+  #   devices:
+  #     - /dev/net/tun
+  #   network_mode: host
+  #   volumes:
+  #     - "/Users/ignacioillanes/Desktop/zerotier-one:/var/lib/zerotier-one"
+  #   cap_add:
+  #     - NET_ADMIN
+  #     - SYS_ADMIN
+  #   entrypoint: ["zerotier-cli", "join", "12ac4a1e711ad9c7"]
+
+  config-server:
+    image: ucb-judge-config-server:1.0.0
+    ports:
+      - "8888:8888"
+    environment:
+      CONFIG_SERVER_USER: ${CONFIG_SERVER_USER}
+      CONFIG_SERVER_PASSWORD: ${CONFIG_SERVER_PASSWORD}
+      GIT_REPO_URI: ${GIT_REPO_URI}
+      HOST_KEY: ${HOST_KEY}
+      PRIVATE_KEY_PATH: ${PRIVATE_KEY_PATH}
+      ENCRYPT_KEY: ${ENCRYPT_KEY}
+
+  service-discovery:
+    image: ucb-judge-service-discovery:0.1.0
+    ports:
+      - "8711:8711"
+    environment:
+      CONFIG_SERVER_URI: ${CONFIG_SERVER_BASE_URI}/ucb-judge/service-discovery
+      CONFIG_SERVER_USER: ${CONFIG_SERVER_USER}
+      CONFIG_SERVER_PASSWORD: ${CONFIG_SERVER_PASSWORD}
+    # depends_on:
+    #   - config-server
+
+  gateway:
+    image: ucb-judge-gateway:0.1.0
+    ports:
+      - "8282:8282"
+    environment:
+      CONFIG_SERVER_URI: ${CONFIG_SERVER_BASE_URI}/ucb-judge/gateway
+      CONFIG_SERVER_USER: ${CONFIG_SERVER_USER}
+      CONFIG_SERVER_PASSWORD: ${CONFIG_SERVER_PASSWORD}
