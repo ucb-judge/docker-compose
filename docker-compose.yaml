@@ -20,17 +20,17 @@ services:
   #     - SYS_ADMIN
   #   entrypoint: ["zerotier-cli", "join", "12ac4a1e711ad9c7"]
 
-  config-server:
-    image: ucb-judge-config-server:1.0.0
-    ports:
-      - "8888:8888"
-    environment:
-      CONFIG_SERVER_USER: ${CONFIG_SERVER_USER}
-      CONFIG_SERVER_PASSWORD: ${CONFIG_SERVER_PASSWORD}
-      GIT_REPO_URI: ${GIT_REPO_URI}
-      HOST_KEY: ${HOST_KEY}
-      PRIVATE_KEY_PATH: ${PRIVATE_KEY_PATH}
-      ENCRYPT_KEY: ${ENCRYPT_KEY}
+#  config-server:
+#    image: ucb-judge-config-server:1.0.0
+#    ports:
+#      - "8888:8888"
+#    environment:
+#      CONFIG_SERVER_USER: ${CONFIG_SERVER_USER}
+#      CONFIG_SERVER_PASSWORD: ${CONFIG_SERVER_PASSWORD}
+#      GIT_REPO_URI: ${GIT_REPO_URI}
+#      HOST_KEY: ${HOST_KEY}
+#      PRIVATE_KEY_PATH: ${PRIVATE_KEY_PATH}
+#      ENCRYPT_KEY: ${ENCRYPT_KEY}
 
   service-discovery:
     image: ucb-judge-service-discovery:0.1.0
