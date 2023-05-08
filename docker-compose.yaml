@@ -5,49 +5,49 @@
 ###############################
 
 version: "3.7"
+networks:
+  network-ucb-judge:
+    external: true
 
 services:
-  # zerotier:
-  #   image: zerotier/zerotier-synology:latest
-  #   container_name: zerotier
-  #   devices:
-  #     - /dev/net/tun
-  #   network_mode: host
-  #   volumes:
-  #     - "/Users/ignacioillanes/Desktop/zerotier-one:/var/lib/zerotier-one"
-  #   cap_add:
-  #     - NET_ADMIN
-  #     - SYS_ADMIN
-  #   entrypoint: ["zerotier-cli", "join", "12ac4a1e711ad9c7"]
-
-#  config-server:
-#    image: ucb-judge-config-server:1.0.0
-#    ports:
-#      - "8888:8888"
-#    environment:
-#      CONFIG_SERVER_USER: ${CONFIG_SERVER_USER}
-#      CONFIG_SERVER_PASSWORD: ${CONFIG_SERVER_PASSWORD}
-#      GIT_REPO_URI: ${GIT_REPO_URI}
-#      HOST_KEY: ${HOST_KEY}
-#      PRIVATE_KEY_PATH: ${PRIVATE_KEY_PATH}
-#      ENCRYPT_KEY: ${ENCRYPT_KEY}
-
   service-discovery:
-    image: ucb-judge-service-discovery:0.1.0
-    ports:
-      - "8711:8711"
+    image: ucb-judge-service-discovery:1.0.0
     environment:
-      CONFIG_SERVER_URI: ${CONFIG_SERVER_BASE_URI}/ucb-judge/service-discovery
+      CONFIG_SERVER_URI: ${CONFIG_SERVER_BASE_URI}
       CONFIG_SERVER_USER: ${CONFIG_SERVER_USER}
       CONFIG_SERVER_PASSWORD: ${CONFIG_SERVER_PASSWORD}
-    # depends_on:
-    #   - config-server
-
+      EUREKA_SERVER_URI: ${EUREKA_SERVER_URI}
+      CONFIG_SERVER_PROFILE: ${CONFIG_SERVER_PROFILE}
+      ZIPKIN_SERVER_URI: ${ZIPKIN_SERVER_URI}
+    networks:
+      - network-ucb-judge
   gateway:
-    image: ucb-judge-gateway:0.1.0
+    image: ucb-judge-gateway:1.0.0
     ports:
       - "8282:8282"
     environment:
-      CONFIG_SERVER_URI: ${CONFIG_SERVER_BASE_URI}/ucb-judge/gateway
+      CONFIG_SERVER_URI: ${CONFIG_SERVER_BASE_URI}
       CONFIG_SERVER_USER: ${CONFIG_SERVER_USER}
       CONFIG_SERVER_PASSWORD: ${CONFIG_SERVER_PASSWORD}
+      EUREKA_SERVER_URI: ${EUREKA_SERVER_URI}
+      CONFIG_SERVER_PROFILE: ${CONFIG_SERVER_PROFILE}
+      ZIPKIN_SERVER_URI: ${ZIPKIN_SERVER_URI}
+    depends_on:
+      - service-discovery
+    networks:
+      - network-ucb-judge
+  users:
+    image: ucb-judge-users:1.0.0
+    environment:
+      CONFIG_SERVER_URI: ${CONFIG_SERVER_BASE_URI}
+      CONFIG_SERVER_USER: ${CONFIG_SERVER_USER}
+      CONFIG_SERVER_PASSWORD: ${CONFIG_SERVER_PASSWORD}
+      EUREKA_SERVER_URI: ${EUREKA_SERVER_URI}
+      CONFIG_SERVER_PROFILE: ${CONFIG_SERVER_PROFILE}
+      ZIPKIN_SERVER_URI: ${ZIPKIN_SERVER_URI}
+      KEYCLOAK_SERVER_URI: ${KEYCLOAK_SERVER_URI}
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
+    depends_on:
+      - service-discovery
+    networks:
+      - network-ucb-judge
