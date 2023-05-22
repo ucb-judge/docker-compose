@@ -9,45 +9,115 @@ networks:
   network-ucb-judge:
     external: true
 
+x-common-postgres-environment: &common-postgres-environment
+  POSTGRES_USER: ${POSTGRES_USER}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+  POSTGRES_URL: ${POSTGRES_URL}
+
+x-common-environment: &common-environment
+  CONFIG_SERVER_URI: ${CONFIG_SERVER_BASE_URI}
+  EUREKA_SERVER_URI: ${EUREKA_SERVER_URI}
+  CONFIG_SERVER_PROFILE: ${CONFIG_SERVER_PROFILE}
+  ZIPKIN_SERVER_URI: ${ZIPKIN_SERVER_URI}
+
+x-common-keycloak-environment: &common-keycloak-environment
+  KEYCLOAK_SERVER_URI: ${KEYCLOAK_SERVER_URI}
+  KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
+  KEYCLOAK_REALM: ${KEYCLOAK_REALM}
+  KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID}
+
+x-common-minio-environment: &common-minio-environment
+  MINIO_SERVER_URI: ${MINIO_SERVER_URI}
+  MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+  MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+
+x-common-rabbitmq-environment: &common-rabbitmq-environment
+  RABBITMQ_HOST: ${RABBITMQ_HOST}
+  RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
+  RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+  RABBITMQ_VIRTUAL_HOST: ${RABBITMQ_VIRTUAL_HOST}
+
 services:
-  service-discovery:
-    image: ucb-judge-service-discovery:1.0.0
+  postgres:
+    image: postgres
+    ports:
+      - "5432:5432"
     environment:
-      CONFIG_SERVER_URI: ${CONFIG_SERVER_BASE_URI}
-      CONFIG_SERVER_USER: ${CONFIG_SERVER_USER}
-      CONFIG_SERVER_PASSWORD: ${CONFIG_SERVER_PASSWORD}
-      EUREKA_SERVER_URI: ${EUREKA_SERVER_URI}
-      CONFIG_SERVER_PROFILE: ${CONFIG_SERVER_PROFILE}
-      ZIPKIN_SERVER_URI: ${ZIPKIN_SERVER_URI}
+      <<: *common-postgres-environment
+    volumes:
+      - ~/Desktop/SIS-311/ucb-judge/postgres:/var/lib/postgresql/data
+    networks:
+      - network-ucb-judge
+  service-discovery:
+    image: ucb-judge-service-discovery:1.0.1
+    environment:
+      <<: *common-environment
+    volumes:
+      - ~/Desktop/SIS-311/ucb-judge/service-discovery:/opt/ucb-judge/logs/uj-service-discovery
     networks:
       - network-ucb-judge
   gateway:
-    image: ucb-judge-gateway:1.0.0
+    image: ucb-judge-gateway:1.0.1
     ports:
       - "8282:8282"
     environment:
-      CONFIG_SERVER_URI: ${CONFIG_SERVER_BASE_URI}
-      CONFIG_SERVER_USER: ${CONFIG_SERVER_USER}
-      CONFIG_SERVER_PASSWORD: ${CONFIG_SERVER_PASSWORD}
-      EUREKA_SERVER_URI: ${EUREKA_SERVER_URI}
-      CONFIG_SERVER_PROFILE: ${CONFIG_SERVER_PROFILE}
-      ZIPKIN_SERVER_URI: ${ZIPKIN_SERVER_URI}
+      <<: *common-environment
+    volumes:
+      - ~/Desktop/SIS-311/ucb-judge/gateway:/opt/ucb-judge/logs/uj-gateway
     depends_on:
       - service-discovery
     networks:
       - network-ucb-judge
   users:
-    image: ucb-judge-users:1.0.0
+    image: ucb-judge-users:1.0.1
     environment:
-      CONFIG_SERVER_URI: ${CONFIG_SERVER_BASE_URI}
-      CONFIG_SERVER_USER: ${CONFIG_SERVER_USER}
-      CONFIG_SERVER_PASSWORD: ${CONFIG_SERVER_PASSWORD}
-      EUREKA_SERVER_URI: ${EUREKA_SERVER_URI}
-      CONFIG_SERVER_PROFILE: ${CONFIG_SERVER_PROFILE}
-      ZIPKIN_SERVER_URI: ${ZIPKIN_SERVER_URI}
-      KEYCLOAK_SERVER_URI: ${KEYCLOAK_SERVER_URI}
-      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
+        <<: *common-environment
+        <<: *common-keycloak-environment
+        <<: *common-rabbitmq-environment
+    volumes:
+      - ~/Desktop/SIS-311/ucb-judge/users:/opt/ucb-judge/logs/uj-users
     depends_on:
       - service-discovery
+      - postgres
+    networks:
+      - network-ucb-judge
+  email:
+    image: ucb-judge-email:1.0.1
+    environment:
+      EMAIL_HOST: ${EMAIL_HOST}
+      EMAIL_USERNAME: ${EMAIL_USERNAME}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD}
+      <<: *common-environment
+      <<: *common-rabbitmq-environment
+    volumes:
+      - ~/Desktop/SIS-311/ucb-judge/email:/opt/ucb-judge/logs/uj-email
+    depends_on:
+      - service-discovery
+    networks:
+      - network-ucb-judge
+  file-uploader:
+    image: ucb-judge-file-uploader:1.0.1
+    environment:
+      <<: *common-environment
+      <<: *common-postgres-environment
+      <<: *common-keycloak-environment
+      <<: *common-minio-environment
+    depends_on:
+      - service-discovery
+    volumes:
+      - ~/Desktop/SIS-311/ucb-judge/file-uploader:/opt/ucb-judge/logs/uj-file-uploader
+    networks:
+      - network-ucb-judge
+  problems:
+    image: ucb-judge-problems:1.0.2
+    environment:
+      <<: *common-environment
+      <<: *common-postgres-environment
+      <<: *common-keycloak-environment
+    depends_on:
+      - service-discovery
+      - postgres
+    volumes:
+        - ~/Desktop/SIS-311/ucb-judge/problems:/opt/ucb-judge/logs/uj-problems
     networks:
       - network-ucb-judge
